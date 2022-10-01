@@ -1,0 +1,83 @@
+public class Item {
+ 
+  private final long id;
+  private String name;
+  private double price;
+  private int count;
+
+  public Item(long id, String name, double price, int count) {
+      this.id = id;
+      this.name = name;
+      this.price = price;
+      this.count = count;
+  }
+
+  public long getId() {
+      return this.id;
+  }
+
+  public String getName() {
+      return this.name;
+  }
+
+  public double getPrice() {
+      return this.price;
+  }
+
+  public void setPrice(double price) {
+      this.price = price;
+  }
+
+  public int getCount() {
+      return this.count;
+  }
+
+  public void setCount(int count) {
+      this.count = count;
+  }
+ 
+}
+
+
+@RestController
+public class InventoryController {
+
+	
+  @Autowired
+  private InventoryService inventoryService;
+  
+  @PostMapping("/create")
+  public ResponseEntity<Item> createInventory (@RequestParam("item") Item item) {
+	return inventoryService.createInventory(item);
+  }
+  
+  @GetMapping("/getInventory/{id}")
+  public ResponseEntity<Item> getInventory(@PathVariable long id) {
+	return inventoryService.getInventory(item);
+  
+  }
+}
+
+@Service
+public class InventoryService{
+
+	@Repository
+	InventoryRepository inventoryRepository;
+
+	public Item createInventory(Item item)
+	{
+		return inventoryRepository.save(item);
+	}
+
+	public Item getInventory (long id)
+	{
+		return inventoryRepository.get(id);
+
+	}
+}
+
+
+@Repository
+public interface InventoryRepositoy extends JpaRepository<Item, String> {
+
+}

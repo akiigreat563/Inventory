@@ -1,0 +1,109 @@
+@Entity
+@Table(name = "files")
+public class FileDB {
+  @Id
+  @GeneratedValue(generator = "Generated.identity")
+  private String id;
+
+  private String name;
+
+  private String type;
+
+  @Lob
+  private byte[] data;
+
+  public FileDB() {
+  }
+
+  public FileDB(String name, String type, byte[] data) {
+    this.name = name;
+    this.type = type;
+    this.data = data;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
+  }
+
+  public byte[] getData() {
+    return data;
+  }
+
+  public void setData(byte[] data) {
+    this.data = data;
+  }
+
+}
+
+
+@Repository
+public interface FileDBRepository extends JpaRepository<FileDB, String> {
+
+}
+
+
+@Service
+public class FileStorageService {
+
+  @Autowired
+  private FileDBRepository fileDBRepository;
+
+  public FileDB store(MultipartFile file) throws IOException {
+    String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+    FileDB FileDB = new FileDB(fileName, file.getContentType(), file.getBytes());
+
+    return fileDBRepository.save(FileDB);
+  }
+
+  public FileDB getFile(String id) {
+    return fileDBRepository.findById(id).get();
+  }
+  
+ 
+}
+
+@RestController
+public class FileController {
+
+  @Autowired
+  private FileStorageService storageService;
+
+  @PostMapping("/upload")
+  public ResponseEntity<ResponseMessage> uploadFile(@RequestParam("file") MultipartFile file) {
+    String message = "";
+    try {
+      storageService.store(file);
+
+      message = "Uploaded the file successfully: " + file.getOriginalFilename();
+      return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage(message));
+    } catch (Exception e) {
+      message = "Could not upload the file: " + file.getOriginalFilename() + "!";
+      return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new ResponseMessage(message));
+    }
+  }
+  
+    @GetMapping("/files/{id}")
+	public ResponseEntity<byte[]> getFile(@PathVariable String id) {
+    FileDB fileDB = storageService.getFile(id);
+
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileDB.getName() + "\"")
+        .body(fileDB.getData());
+  }
+}
